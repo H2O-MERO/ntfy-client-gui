@@ -1,0 +1,8 @@
+/target
+**/*.rs.bk
+Cargo.lock
+.cargo/
+*.log
+settings.json
+topics.json
+topics.txt
