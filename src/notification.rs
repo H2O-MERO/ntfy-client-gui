@@ -10,10 +10,10 @@ pub fn priority_color(priority: u8) -> egui::Color32 {
 }
 
 /// 发送 Windows 原生 toast。失败时静默返回，由调用方回退到应用内弹窗。
-pub fn show_native_notification(title: &str, body: &str) -> bool {
+pub fn show_native_notification(title: &str, body: &str, auto_copy: bool) -> bool {
     #[cfg(not(target_os = "windows"))]
     {
-        let _ = (title, body);
+        let _ = (title, body, auto_copy);
         false
     }
 
@@ -23,12 +23,14 @@ pub fn show_native_notification(title: &str, body: &str) -> bool {
 
         use tauri_winrt_notification::{Duration, Sound, Toast};
 
+        let button_text = if auto_copy { "通知已复制" } else { "复制内容" };
+
         Toast::new("NtfyClientGui")
             .title(title)
             .text1(body)
             .sound(Some(Sound::Default))
             .duration(Duration::Short)
-            .add_button("复制内容", "action=copy")
+            .add_button(button_text, "action=copy")
             .show()
             .map(|_| true)
             .unwrap_or(false)

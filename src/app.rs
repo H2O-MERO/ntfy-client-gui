@@ -300,6 +300,7 @@ impl App {
                             let shown = notification::show_native_notification(
                                 &final_title,
                                 &message,
+                                self.settings.native_notifications_auto_copy_to_clipboard,
                             );
                             if !shown {
                                 self.show_main_window(ctx);
@@ -417,7 +418,11 @@ impl App {
 
         match self.settings_draft.notifications_method {
             NotificationsMethod::NativeWindows => {
-                let shown = notification::show_native_notification(TEST_TITLE, TEST_MESSAGE);
+                let shown = notification::show_native_notification(
+                    TEST_TITLE,
+                    TEST_MESSAGE,
+                    self.settings_draft.native_notifications_auto_copy_to_clipboard,
+                );
                 if !shown {
                     let timeout_secs = if self.settings_draft.timeout <= 0.0 {
                         f32::INFINITY
