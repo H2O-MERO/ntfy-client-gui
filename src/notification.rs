@@ -20,8 +20,10 @@ pub fn show_native_notification(title: &str, body: &str) -> bool {
     #[cfg(target_os = "windows")]
     {
         notify_rust::Notification::new()
+            .appname("Ntfy Client Gui")
             .summary(title)
             .body(body)
+            .action("copy", "复制内容")
             .show()
             .map(|_| true)
             .unwrap_or(false)

@@ -22,6 +22,14 @@ rustc --version
 cargo --version
 ```
 
+本项目已在以下环境验证通过：
+
+```text
+rustc 1.97.1
+cargo 1.97.1
+stable-x86_64-pc-windows-msvc
+```
+
 ## 2. 安装系统依赖
 
 ### Windows
@@ -49,14 +57,13 @@ cargo --version
 cargo build --release
 ```
 
-产物位置：
+Windows 下已验证成功生成：
 
-| 平台 | 路径 |
-| --- | --- |
-| Windows | `target\release\ntfy-client-gui.exe` |
-| macOS | `target/release/ntfy-client-gui` |
+```text
+target\release\ntfy-client-gui.exe
+```
 
-这个文件就是可直接分发的单文件程序，不需要复制项目里的其他文件。
+这是可直接分发的单文件程序，不需要复制项目里的其他文件。
 
 ### Windows 一键脚本
 
@@ -66,11 +73,20 @@ cargo build --release
 build.bat
 ```
 
-脚本会尝试使用 Git 自带的 OpenSSL 后端拉取 crates.io 索引，适用于 Schannel 报 `SEC_E_NO_CREDENTIALS` 的环境。
+脚本会设置 Git 自带的 OpenSSL 后端拉取 crates.io 索引，适用于 Schannel 报 `SEC_E_NO_CREDENTIALS` 的环境。
+
+### 编译失败：文件被占用
+
+如果编译时提示 `拒绝访问` / `os error 5`，通常是旧版本程序还在运行，先关闭进程再重新编译：
+
+```powershell
+Stop-Process -Name ntfy-client-gui -Force
+cargo build --release
+```
 
 ## 4. 可选：减小体积
 
-在 `Cargo.toml` 的 `[profile.release]` 中开启 strip：
+`Cargo.toml` 的 `[profile.release]` 已默认开启：
 
 ```toml
 [profile.release]
@@ -79,28 +95,13 @@ lto = "thin"
 strip = "symbols"
 ```
 
-然后重新编译：
+重新编译即可生效：
 
 ```bash
 cargo build --release
 ```
 
-## 5. 内存优化
-
-当前项目已做以下内存优化：
-
-- 仅启用 `eframe` 的 `glow`（OpenGL）后端，不编译/启用 `wgpu` 后端。
-- Tokio 运行时只保留 1 个 worker 线程，减少线程和栈内存占用。
-- 加载 CJK 字体时只保留中文字体，移除 egui 默认字体，降低字体内存和二进制体积。
-- 通知弹窗最多同时保留 3 个，避免堆积。
-
-如果还想进一步降低内存，可以：
-
-- 在 `Cargo.toml` 的 `[profile.release]` 增加 `strip = "symbols"`（减小二进制，不会显著影响运行内存）。
-- 减少同时订阅的话题数量。
-- 关闭不必要的系统托盘菜单项（当前已是最小集）。
-
-## 6. 为 macOS 交叉编译
+## 5. 为 macOS 交叉编译
 
 Rust **不能直接从 Windows 交叉编译出 macOS 可执行文件**（需要 macOS SDK 和对应 linker）。  
 要生成 Mac 版本，请在 macOS 上执行：
@@ -129,6 +130,9 @@ name: Build
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - "v*"
 
 jobs:
   build:
@@ -155,4 +159,5 @@ jobs:
 - `settings.json`
 - `topics.json`
 
-这两个文件已加入 `.gitignore`，不会提交到版本库。
+这两个文件已加入 `.gitignore`，不会提交到版本库。  
+如果检测到旧版 `topics.txt`，程序会自动迁移为 `topics.json` 并删除旧文件。

@@ -289,12 +289,31 @@ impl App {
     }
 
     fn push_toast(&mut self, title: String, message: String, priority: u8) {
-        self.toast_id += 1;
         let timeout_secs = if self.settings.timeout <= 0.0 {
             f32::INFINITY
         } else {
             self.settings.timeout as f32
         };
+        self.push_toast_with_options(
+            title,
+            message,
+            priority,
+            timeout_secs,
+            self.settings.custom_tray_notifications_show_timeout_bar,
+            self.settings.custom_tray_notifications_show_in_dark_mode,
+        );
+    }
+
+    fn push_toast_with_options(
+        &mut self,
+        title: String,
+        message: String,
+        priority: u8,
+        timeout_secs: f32,
+        show_timeout_bar: bool,
+        dark: bool,
+    ) {
+        self.toast_id += 1;
         self.toasts.push(Toast {
             id: self.toast_id,
             title,
@@ -302,13 +321,61 @@ impl App {
             priority,
             created: Instant::now(),
             timeout_secs,
-            show_timeout_bar: self.settings.custom_tray_notifications_show_timeout_bar,
-            dark: self.settings.custom_tray_notifications_show_in_dark_mode,
+            show_timeout_bar,
+            dark,
         });
 
         // 避免同时堆太多弹窗。
         if self.toasts.len() > 3 {
             self.toasts.remove(0);
+        }
+    }
+
+    /// 按设置窗口中的当前（未保存）通知选项发送一条测试通知。
+    fn send_test_notification(&mut self, ctx: &egui::Context) {
+        const TEST_TITLE: &str = "测试通知";
+        const TEST_MESSAGE: &str = "这是一条来自 ntfy-client-gui 的测试通知";
+
+        match self.settings_draft.notifications_method {
+            NotificationsMethod::NativeWindows => {
+                let shown = notification::show_native_notification(TEST_TITLE, TEST_MESSAGE);
+                if !shown {
+                    let timeout_secs = if self.settings_draft.timeout <= 0.0 {
+                        f32::INFINITY
+                    } else {
+                        self.settings_draft.timeout as f32
+                    };
+                    self.push_toast_with_options(
+                        TEST_TITLE.to_string(),
+                        TEST_MESSAGE.to_string(),
+                        3,
+                        timeout_secs,
+                        self.settings_draft.custom_tray_notifications_show_timeout_bar,
+                        self.settings_draft.custom_tray_notifications_show_in_dark_mode,
+                    );
+                }
+                if self.settings_draft.native_notifications_auto_copy_to_clipboard {
+                    copy_to_clipboard(ctx, TEST_MESSAGE.to_string());
+                }
+            }
+            NotificationsMethod::CustomTray => {
+                let timeout_secs = if self.settings_draft.timeout <= 0.0 {
+                    f32::INFINITY
+                } else {
+                    self.settings_draft.timeout as f32
+                };
+                self.push_toast_with_options(
+                    TEST_TITLE.to_string(),
+                    TEST_MESSAGE.to_string(),
+                    3,
+                    timeout_secs,
+                    self.settings_draft.custom_tray_notifications_show_timeout_bar,
+                    self.settings_draft.custom_tray_notifications_show_in_dark_mode,
+                );
+                if self.settings_draft.custom_tray_notifications_play_default_windows_sound {
+                    notification::play_notification_sound();
+                }
+            }
         }
     }
 
@@ -609,6 +676,11 @@ impl App {
                         );
                     },
                 );
+
+                ui.add_space(4.0);
+                if ui.button("发送测试通知").clicked() {
+                    self.send_test_notification(ctx);
+                }
                 ui.separator();
 
                 ui.horizontal(|ui| {

@@ -7,6 +7,7 @@
 - 公开/私有话题（HTTP Basic 认证）
 - 系统托盘运行（`tray-icon`）
 - 应用内通知弹窗（可配置超时、进度条、深色模式、提示音）
+- 设置中可直接发送测试通知，预览当前通知效果
 - 设置持久化（`settings.json` / `topics.json`）
 - 开机自启动（Windows 注册表 Run 键）
 - 启动参数：`--start-in-tray` / `--allow-multiple-instances`
