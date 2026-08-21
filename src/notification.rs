@@ -51,7 +51,7 @@ pub fn ensure_toast_registration() {
     }
 
     const AUMID: &str = "NtfyClientGui";
-    const DISPLAY_NAME: &str = "Ntfy Client Gui";
+    const DISPLAY_NAME: &str = "Ntfy Client GUI";
 
     let Ok(exe) = std::env::current_exe() else {
         return;

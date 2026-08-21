@@ -3,13 +3,18 @@ use crate::notification;
 use crate::ntfy;
 use crate::settings::{self, NotificationsMethod, Settings};
 use crate::topics::{self, ConnectionKind, SubscribedTopic};
-use crate::tray::{Tray, TrayAction};
+use crate::tray::Tray;
 use crate::updater::{self, UpdateCheckResult};
 use eframe::egui;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
+
+static EXIT_REQUESTED: AtomicBool = AtomicBool::new(false);
+static RUNTIME_HANDLE: OnceLock<tokio::runtime::Handle> = OnceLock::new();
 
 pub struct App {
     runtime: tokio::runtime::Handle,
@@ -76,8 +81,12 @@ impl App {
         cc: &eframe::CreationContext<'_>,
         runtime: tokio::runtime::Handle,
         start_in_tray: bool,
+        create_tray: bool,
+        check_update: bool,
     ) -> Self {
         install_cjk_font(&cc.egui_ctx);
+
+        let _ = RUNTIME_HANDLE.set(runtime.clone());
 
         let settings = settings::load_settings();
         let settings_draft = settings.clone();
@@ -102,17 +111,86 @@ impl App {
             toasts: Vec::new(),
             toast_id: 0,
             selected_topic: None,
-            tray: Tray::new(),
+            tray: if create_tray { Tray::new() } else { None },
             true_exit: false,
             visible: !start_in_tray,
         };
+
+        // 托盘/菜单事件直接在事件处理器中处理，避免窗口隐藏后 egui 不重绘导致菜单失效。
+        if app.tray.is_some() {
+            let (show_id, check_id, exit_id) = {
+                let tray = app.tray.as_ref().expect("tray checked");
+                (
+                    tray.show_item.id().clone(),
+                    tray.check_item.id().clone(),
+                    tray.exit_item.id().clone(),
+                )
+            };
+
+            let ctx = cc.egui_ctx.clone();
+            let tx = app.event_tx.clone();
+
+            tray_icon::menu::MenuEvent::set_event_handler(Some(Box::new(
+                move |event: tray_icon::menu::MenuEvent| {
+                    if event.id == show_id {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+                    } else if event.id == check_id {
+                        if let Some(handle) = RUNTIME_HANDLE.get() {
+                            let tx = tx.clone();
+                            handle.spawn(async move {
+                                let result = updater::check_for_updates().await;
+                                let _ = tx.send(AppEvent::UpdateCheckFinished {
+                                    result,
+                                    interactive: true,
+                                });
+                            });
+                        }
+                    } else if event.id == exit_id {
+                        EXIT_REQUESTED.store(true, Ordering::SeqCst);
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                },
+            )));
+
+            let tray_ctx = cc.egui_ctx.clone();
+            tray_icon::TrayIconEvent::set_event_handler(Some(Box::new(
+                move |event: tray_icon::TrayIconEvent| {
+                    if let tray_icon::TrayIconEvent::Click {
+                        button,
+                        button_state,
+                        ..
+                    } = event
+                    {
+                        if button == tray_icon::MouseButton::Left
+                            && button_state == tray_icon::MouseButtonState::Up
+                        {
+                            tray_ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                            tray_ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+                        }
+                    }
+                },
+            )));
+        }
+
+        // 保活：窗口隐藏后 egui 事件循环可能不再自动重绘，
+        // 用后台线程周期性唤醒，确保托盘“显示/退出”等命令仍能被处理。
+        let heartbeat_ctx = cc.egui_ctx.clone();
+        std::thread::spawn(move || loop {
+            std::thread::sleep(Duration::from_millis(200));
+            heartbeat_ctx.request_repaint();
+        });
 
         for topic in loaded_topics {
             app.add_topic_inner(topic, false);
         }
 
-        // 启动后静默检查一次更新。
-        app.start_update_check(false);
+        // 启动后检查更新：静默或按 --check-update 交互检查。
+        if check_update {
+            app.start_update_check(true);
+        } else {
+            app.start_update_check(false);
+        }
 
         app
     }
@@ -126,6 +204,7 @@ impl App {
     }
 
     pub fn request_exit(&mut self, ctx: &egui::Context) {
+        EXIT_REQUESTED.store(true, Ordering::SeqCst);
         self.true_exit = true;
         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
     }
@@ -910,7 +989,7 @@ impl App {
             return;
         }
 
-        if self.tray.is_some() && !self.true_exit {
+        if self.tray.is_some() && !self.true_exit && !EXIT_REQUESTED.load(Ordering::SeqCst) {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
             self.visible = false;
@@ -929,15 +1008,6 @@ impl eframe::App for App {
 
         self.handle_close_request(ctx);
         self.handle_events(ctx);
-
-        let tray_action = self.tray.as_ref().and_then(|tray| tray.poll_events());
-        if let Some(action) = tray_action {
-            match action {
-                TrayAction::Show => self.show_main_window(ctx),
-                TrayAction::CheckUpdates => self.start_update_check(true),
-                TrayAction::Exit => self.request_exit(ctx),
-            }
-        }
 
         self.draw_menu(ctx);
         self.draw_central(ctx);

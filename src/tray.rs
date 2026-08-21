@@ -1,5 +1,5 @@
-use tray_icon::menu::{Menu, MenuEvent, MenuItem};
-use tray_icon::{Icon, MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent};
+use tray_icon::menu::{Menu, MenuItem};
+use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
 
 pub struct Tray {
     _tray: TrayIcon,
@@ -21,6 +21,7 @@ impl Tray {
 
         let tray = TrayIconBuilder::new()
             .with_menu(Box::new(menu))
+            .with_menu_on_left_click(false)
             .with_tooltip("ntfy client GUI")
             .with_icon(default_icon()?)
             .build()
@@ -33,40 +34,6 @@ impl Tray {
             exit_item,
         })
     }
-
-    pub fn poll_events(&self) -> Option<TrayAction> {
-        // 左键单击托盘图标：显示主窗口。
-        if let Ok(event) = TrayIconEvent::receiver().try_recv() {
-            if let TrayIconEvent::Click {
-                button,
-                button_state,
-                ..
-            } = event
-            {
-                if button == MouseButton::Left && button_state == MouseButtonState::Up {
-                    return Some(TrayAction::Show);
-                }
-            }
-        }
-
-        let event = MenuEvent::receiver().try_recv().ok()?;
-        if event.id == self.show_item.id() {
-            Some(TrayAction::Show)
-        } else if event.id == self.check_item.id() {
-            Some(TrayAction::CheckUpdates)
-        } else if event.id == self.exit_item.id() {
-            Some(TrayAction::Exit)
-        } else {
-            None
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TrayAction {
-    Show,
-    CheckUpdates,
-    Exit,
 }
 
 fn default_icon() -> Option<Icon> {

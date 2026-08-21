@@ -41,6 +41,7 @@ struct GitHubAsset {
 
 const LATEST_RELEASE_URL: &str =
     "https://api.github.com/repos/H2O-MERO/ntfy-client-gui/releases/latest";
+const RELEASES_PAGE_URL: &str = "https://github.com/H2O-MERO/ntfy-client-gui/releases/latest";
 
 pub async fn check_for_updates() -> UpdateCheckResult {
     let mut result = UpdateCheckResult {
@@ -100,7 +101,10 @@ pub async fn check_for_updates() -> UpdateCheckResult {
 
     result.latest_version = Some(format_version(&latest));
     result.release_notes = release.body.clone();
-    result.release_page_url = release.html_url.clone();
+    result.release_page_url = release
+        .html_url
+        .clone()
+        .or_else(|| Some(RELEASES_PAGE_URL.to_string()));
 
     result.update_available = latest > current;
     if result.update_available {

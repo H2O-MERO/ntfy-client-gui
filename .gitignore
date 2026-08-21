@@ -6,3 +6,4 @@ Cargo.lock
 settings.json
 topics.json
 topics.txt
+*.lock
