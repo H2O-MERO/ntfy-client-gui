@@ -23,13 +23,14 @@ http = "1"
 semver = "1"
 webbrowser = "1"
 rfd = "0.15"
-notify-rust = "4"
 tray-icon = "0.19"
 log = "0.4"
 env_logger = "0.11"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
+tauri-winrt-notification = "0.7"
+mslnk = "0.1"
 
 [profile.release]
 opt-level = 2

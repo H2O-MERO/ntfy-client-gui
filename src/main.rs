@@ -36,6 +36,10 @@ fn main() -> Result<(), eframe::Error> {
         .iter()
         .any(|a| a == "-m" || a == "--allow-multiple-instances");
 
+    // 注册 Windows toast AppUserModelID，确保原生通知显示为 “Ntfy Client Gui”。
+    #[cfg(target_os = "windows")]
+    notification::ensure_toast_registration();
+
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(1)
         .enable_all()

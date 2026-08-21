@@ -58,6 +58,6 @@ src/
 
 - 界面目前以中文为主；设置中的“语言”字段会随 `settings.json` 保存，但尚未实现完整多语言资源切换。
 - 程序启动时会尝试加载 Windows 自带中文字体（黑体/雅黑），以便正确显示中文界面。
-- “原生 Windows 通知”通过 `notify-rust` 发送系统 toast；如果系统环境不支持，会自动回退到应用内弹窗。
+- “原生 Windows 通知”通过 `tauri-winrt-notification` 直接调用 WinRT toast，并自动在开始菜单/注册表注册 `NtfyClientGui` AppUserModelID，应用名显示为 `Ntfy Client Gui`；如果原生 toast 发送失败，会自动回退到应用内通知。
 - 自定义通知弹窗绘制在主窗口内；收到自定义通知、连接失败或需要展示更新结果时会自动显示并聚焦主窗口。
 - 自动更新当前实现为“检查更新并打开 GitHub Release 页面”，未实现全自动替换升级。
