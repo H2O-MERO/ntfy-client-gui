@@ -40,7 +40,7 @@ struct GitHubAsset {
 }
 
 const LATEST_RELEASE_URL: &str =
-    "https://api.github.com/repos/H2O-MERO/ntfy-pusher-Windows/releases/latest";
+    "https://api.github.com/repos/H2O-MERO/ntfy-client-gui/releases/latest";
 
 pub async fn check_for_updates() -> UpdateCheckResult {
     let mut result = UpdateCheckResult {
@@ -104,7 +104,7 @@ pub async fn check_for_updates() -> UpdateCheckResult {
 
     result.update_available = latest > current;
     if result.update_available {
-        // 与原版一致：优先 zip，其次 exe。
+        // 优先 zip，其次 exe。
         let asset = release
             .assets
             .iter()

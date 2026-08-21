@@ -1,8 +1,6 @@
 # ntfy-client-gui
 
-用 **Rust + egui** 重写的 [ntfy-pusher-Windows](https://github.com/H2O-MERO/ntfy-pusher-Windows) 客户端。
-
-一个轻量级 ntfy.sh 兼容推送通知客户端，支持：
+一个使用 **Rust + egui** 编写的轻量级 ntfy.sh 兼容推送通知客户端，支持：
 
 - 多服务器、多话题订阅
 - WebSocket 与 Long HTTP JSON 两种接收协议
@@ -12,7 +10,7 @@
 - 设置持久化（`settings.json` / `topics.json`）
 - 开机自启动（Windows 注册表 Run 键）
 - 启动参数：`--start-in-tray` / `--allow-multiple-instances`
-- GitHub Releases 更新检查
+- GitHub Releases 更新检查（仓库：`H2O-MERO/ntfy-client-gui`）
 
 ## 构建
 
@@ -61,4 +59,4 @@ src/
 - 程序启动时会尝试加载 Windows 自带中文字体（黑体/雅黑），以便正确显示中文界面。
 - “原生 Windows 通知”通过 `notify-rust` 发送系统 toast；如果系统环境不支持，会自动回退到应用内弹窗。
 - 自定义通知弹窗绘制在主窗口内；收到自定义通知、连接失败或需要展示更新结果时会自动显示并聚焦主窗口。
-- 自动更新当前实现为“检查更新并打开 GitHub Release 页面”，未实现原版的全自动替换升级。
+- 自动更新当前实现为“检查更新并打开 GitHub Release 页面”，未实现全自动替换升级。

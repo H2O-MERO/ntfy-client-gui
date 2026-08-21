@@ -60,7 +60,7 @@ pub fn load_topics() -> Vec<SubscribedTopic> {
     let path = topics_path();
     let legacy_path = legacy_topics_path();
 
-    // 兼容原版 ntfy-pusher-Windows 的旧 topics.txt：迁移为 topics.json 后删除旧文件。
+    // 兼容旧版 topics.txt：迁移为 topics.json 后删除旧文件。
     if !path.exists() && legacy_path.exists() {
         if let Ok(text) = fs::read_to_string(&legacy_path) {
             let topics: Vec<SubscribedTopic> = text

@@ -103,7 +103,7 @@ pub async fn listen(
 
         match outcome {
             StreamOutcome::Connected => {
-                // 连接成功过，按原项目逻辑重置失败计数。
+                // 连接成功后重置失败计数。
                 attempts = 0;
             }
             StreamOutcome::Credentials => {

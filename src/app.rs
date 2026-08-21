@@ -677,7 +677,7 @@ impl App {
             .resizable(false)
             .show(ctx, |ui| {
                 ui.heading("ntfy-client-gui");
-                ui.label("ntfy.sh Windows 客户端的 Rust + egui 重写版。");
+                ui.label("ntfy.sh 桌面客户端（Rust + egui）。");
                 ui.label(format!("版本 {}", env!("CARGO_PKG_VERSION")));
                 ui.add_space(4.0);
                 if ui.button("访问 ntfy.sh").clicked() {

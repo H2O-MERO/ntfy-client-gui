@@ -2,10 +2,10 @@
 name = "ntfy-client-gui"
 version = "0.1.0"
 edition = "2021"
-description = "ntfy.sh Windows client rewritten with Rust and egui"
+description = "ntfy.sh desktop client built with Rust and egui"
 license = "MIT"
 authors = ["ntfy-client-gui contributors"]
-repository = "https://github.com/H2O-MERO/ntfy-pusher-Windows"
+repository = "https://github.com/H2O-MERO/ntfy-client-gui"
 
 [dependencies]
 eframe = { version = "0.29", default-features = false, features = ["glow", "default_fonts", "wayland", "x11"] }
